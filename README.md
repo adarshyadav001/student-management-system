@@ -53,3 +53,8 @@ This project is ideal for:
 
 ## 📄 License
 This project is open-source and free to use for learning and educational purposes.
+
+## 🌐 Live Demo
+👉 https://adarshyadav001.github.io/student-management-system/
+
+
