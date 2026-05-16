@@ -9,7 +9,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'sms_super_secret_key_2024_xK9mP2q
 
 # Always resolve DB path relative to this file, works on local & Render
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB = os.path.join(BASE_DIR, 'database.db')
+DB = os.environ.get('DB_PATH', os.path.join(BASE_DIR, 'database.db'))
 
 # ── DB helpers ─────────────────────────────────────────────────────────────────
 def get_db():
