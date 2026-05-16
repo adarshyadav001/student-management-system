@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Add Student — Student MS{% endblock %}
+{% block page_title %}Add Student{% endblock %}
+{% block page_subtitle %}Enroll a new student{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('students') }}" class="btn btn-ghost">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:600px">
+  <div class="card">
+    <form method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input class="form-control" type="text" name="name" required placeholder="John Doe">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Roll Number *</label>
+          <input class="form-control" type="text" name="roll_no" required placeholder="CS2024001">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-control" type="email" name="email" placeholder="student@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input class="form-control" type="tel" name="phone" placeholder="+91 98765 43210">
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Course *</label>
+          <select class="form-control" name="course" required>
+            <option value="">Select…</option>
+            {% for c in courses %}<option>{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Year *</label>
+          <select class="form-control" name="year" required>
+            {% for y in range(1,5) %}<option value="{{ y }}">Year {{ y }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Section *</label>
+          <select class="form-control" name="section" required>
+            {% for s in ['A','B','C','D'] %}<option>{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-primary" type="submit">Add Student</button>
+        <a href="{{ url_for('students') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

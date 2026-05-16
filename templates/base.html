@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Holkar Science College SMS{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo-icon">🎓</div>
+      <div>
+      <h1>Holkar Science College</h1>
+       <span>Student Portal</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <div class="nav-section">Academic</div>
+      <a href="{{ url_for('students') }}" class="nav-link {% if request.endpoint in ['students','add_student','edit_student'] %}active{% endif %}">
+        <span class="icon">👨‍🎓</span> Students
+      </a>
+      <a href="{{ url_for('attendance') }}" class="nav-link {% if request.endpoint=='attendance' %}active{% endif %}">
+        <span class="icon">📋</span> Attendance
+      </a>
+      <a href="{{ url_for('marks') }}" class="nav-link {% if request.endpoint=='marks' %}active{% endif %}">
+        <span class="icon">📝</span> Marks
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-card">
+        <div class="admin-avatar">{{ session.admin_name[0].upper() }}</div>
+        <div class="admin-info">
+          <strong>{{ session.admin_name }}</strong>
+          <span>Administrator</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-btn" title="Logout">⏻</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title">{% block page_title %}{% endblock %}</div>
+        <div class="page-subtitle">{% block page_subtitle %}{% endblock %}</div>
+      </div>
+      <div class="topbar-actions">{% block topbar_actions %}{% endblock %}</div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash {{ category }}">
+          {{ '✓' if category == 'success' else '⚠' }} {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="content">{% block content %}{% endblock %}</div>
+  </div>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

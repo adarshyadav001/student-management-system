@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — Student MS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Overview of academic performance & statistics{% endblock %}
+
+{% block content %}
+<!-- Stat Cards -->
+<div class="stats-grid">
+  <div class="stat-card" style="--card-accent:#4f8ef7">
+    <div class="stat-icon">👨‍🎓</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ total_students }}</div>
+      <div class="stat-label">Total Students</div>
+    </div>
+  </div>
+  <div class="stat-card" style="--card-accent:#22c55e">
+    <div class="stat-icon">📚</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ courses|length }}</div>
+      <div class="stat-label">Courses</div>
+    </div>
+  </div>
+  <div class="stat-card" style="--card-accent:#f59e0b">
+    <div class="stat-icon">✅</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ pass_fail.passed or 0 }}</div>
+      <div class="stat-label">Students Passing</div>
+    </div>
+  </div>
+  <div class="stat-card" style="--card-accent:#ef4444">
+    <div class="stat-icon">❌</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ pass_fail.failed or 0 }}</div>
+      <div class="stat-label">Students Failing</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts row 1 -->
+<div class="grid-2 mb-6">
+  <div class="card">
+    <div class="card-title">Course Distribution</div>
+    <div class="chart-box"><canvas id="courseChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Pass / Fail Ratio</div>
+    <div class="chart-box"><canvas id="passFailChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Charts row 2 -->
+<div class="grid-2 mb-6">
+  <div class="card">
+    <div class="card-title">Monthly Attendance %</div>
+    <div class="chart-box"><canvas id="attendanceChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Year-wise Distribution</div>
+    <div class="chart-box"><canvas id="yearChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Top Performers -->
+<div class="card">
+  <div class="section-head">
+    <h2>🏆 Top Performers</h2>
+    <a href="{{ url_for('marks') }}" class="btn btn-ghost btn-sm">View All Marks →</a>
+  </div>
+  {% if top_performers %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Name</th><th>Roll No</th><th>Course</th><th>Avg %</th><th>Grade</th>
+      </tr></thead>
+      <tbody>
+        {% for s in top_performers %}
+        <tr>
+          <td><span class="badge {% if loop.index==1 %}badge-yellow{% elif loop.index==2 %}badge-gray{% elif loop.index==3 %}badge-purple{% else %}badge-blue{% endif %}">{{ loop.index }}</span></td>
+          <td><strong>{{ s.name }}</strong></td>
+          <td class="text-muted">{{ s.roll_no }}</td>
+          <td><span class="badge badge-blue">{{ s.course }}</span></td>
+          <td>
+            <div>{{ s.avg_pct }}%</div>
+            <div class="progress">
+              <div class="progress-bar {% if s.avg_pct>=75 %}success{% elif s.avg_pct>=50 %}{% else %}danger{% endif %}"
+                   style="width:{{ s.avg_pct }}%"></div>
+            </div>
+          </td>
+          <td>
+            {% set g = s.avg_pct %}
+            <span class="badge {% if g>=80 %}badge-green{% elif g>=60 %}badge-blue{% elif g>=40 %}badge-yellow{% else %}badge-red{% endif %}">
+              {% if g>=90 %}O{% elif g>=80 %}A+{% elif g>=70 %}A{% elif g>=60 %}B+{% elif g>=50 %}B{% elif g>=40 %}C{% else %}F{% endif %}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted text-sm">No marks data yet. Add marks to see top performers.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const C = {
+  grid:   { color: 'rgba(255,255,255,0.05)' },
+  text:   '#7c8aaa',
+  accent: ['#4f8ef7','#7c5bdb','#22c55e','#f59e0b','#ef4444','#06b6d4'],
+};
+Chart.defaults.color = C.text;
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size = 12;
+
+const courseLabels = {{ courses | map(attribute='course') | list | tojson }};
+const courseCounts = {{ courses | map(attribute='cnt')   | list | tojson }};
+new Chart(document.getElementById('courseChart'), {
+  type: 'bar',
+  data: { labels: courseLabels,
+          datasets: [{ data: courseCounts, backgroundColor: C.accent, borderRadius: 6, borderSkipped: false }] },
+  options: { plugins:{legend:{display:false}}, scales:{
+    x:{grid:{color:C.grid.color}}, y:{grid:{color:C.grid.color},ticks:{stepSize:1}} }}
+});
+
+const pf = {{ pass_fail | tojson }};
+new Chart(document.getElementById('passFailChart'), {
+  type: 'doughnut',
+  data: { labels: ['Passing','Failing'],
+          datasets: [{ data: [pf.passed||0, pf.failed||0],
+                       backgroundColor: ['#22c55e','#ef4444'], borderWidth: 0, hoverOffset: 6 }] },
+  options: { cutout:'65%', plugins:{legend:{position:'bottom',labels:{padding:16,usePointStyle:true}}} }
+});
+
+const ma = {{ monthly_att | tojson }};
+new Chart(document.getElementById('attendanceChart'), {
+  type: 'line',
+  data: { labels: ma.map(r=>r.month),
+          datasets: [{ data: ma.map(r=>r.pct), borderColor:'#4f8ef7',
+                       backgroundColor:'rgba(79,142,247,0.1)', tension:0.4, fill:true,
+                       pointBackgroundColor:'#4f8ef7', pointRadius:4 }] },
+  options: { plugins:{legend:{display:false}},
+             scales:{ x:{grid:{color:C.grid.color}}, y:{grid:{color:C.grid.color},min:0,max:100,
+                      ticks:{callback:v=>v+'%'}} } }
+});
+
+const yd = {{ year_dist | tojson }};
+new Chart(document.getElementById('yearChart'), {
+  type: 'pie',
+  data: { labels: yd.map(r=>'Year '+r.year),
+          datasets: [{ data: yd.map(r=>r.cnt),
+                       backgroundColor: C.accent, borderWidth: 0, hoverOffset: 6 }] },
+  options: { plugins:{legend:{position:'bottom',labels:{padding:16,usePointStyle:true}}} }
+});
+</script>
+{% endblock %}

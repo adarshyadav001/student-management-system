@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Attendance — Student MS{% endblock %}
+{% block page_title %}Attendance{% endblock %}
+{% block page_subtitle %}Mark and review student attendance{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<form method="GET" class="search-bar" id="filterForm">
+  <select class="form-control" name="course" id="courseSelect" style="width:auto" onchange="this.form.submit()">
+    {% for c in courses %}<option {% if c==selected_course %}selected{% endif %}>{{ c }}</option>{% endfor %}
+  </select>
+  <select class="form-control" name="year" style="width:auto" onchange="this.form.submit()">
+    {% for y in range(1,5) %}
+    <option value="{{ y }}" {% if y|string==selected_year %}selected{% endif %}>Year {{ y }}</option>
+    {% endfor %}
+  </select>
+  <select class="form-control" name="subject_id" style="width:auto" onchange="this.form.submit()">
+    {% for sub in subjects %}
+    <option value="{{ sub.id }}" {% if sub.id|string==selected_subject %}selected{% endif %}>{{ sub.name }}</option>
+    {% endfor %}
+  </select>
+  <input class="form-control" type="date" name="date" value="{{ selected_date }}" style="width:auto">
+  <button class="btn btn-ghost" type="submit">Load</button>
+</form>
+
+<div class="grid-2">
+  <!-- Mark attendance -->
+  <div class="card">
+    <div class="card-title">Mark Attendance — {{ selected_date }}</div>
+    {% if students %}
+    <form method="POST">
+      <input type="hidden" name="subject_id" value="{{ selected_subject }}">
+      <input type="hidden" name="att_date" value="{{ selected_date }}">
+      <div class="table-wrap" style="border:none;border-radius:0">
+        <table>
+          <thead><tr><th>Roll No</th><th>Name</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for s in students %}
+            {% set cur = existing.get(s.id|string, 'present') %}
+            <tr>
+              <td class="text-muted text-sm">{{ s.roll_no }}</td>
+              <td><strong>{{ s.name }}</strong></td>
+              <td>
+                <div class="att-toggle">
+                  <input type="radio" name="status_{{ s.id }}" id="p_{{ s.id }}"
+                         value="present" {% if cur=='present' %}checked{% endif %}>
+                  <label for="p_{{ s.id }}">P</label>
+                  <input type="radio" name="status_{{ s.id }}" id="a_{{ s.id }}"
+                         value="absent" {% if cur=='absent' %}checked{% endif %}>
+                  <label for="a_{{ s.id }}">A</label>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px">
+        <button class="btn btn-success" type="submit">💾 Save Attendance</button>
+        <button type="button" class="btn btn-ghost" onclick="markAll('present')">All Present</button>
+        <button type="button" class="btn btn-ghost" onclick="markAll('absent')">All Absent</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="text-muted">No students found for selected course/year. <a href="{{ url_for('add_student') }}">Add students?</a></p>
+    {% endif %}
+  </div>
+
+  <!-- Monthly report -->
+  <div class="card">
+    <div class="card-title">📊 Attendance Summary (All Time)</div>
+    {% if monthly %}
+    <div class="table-wrap" style="border:none;border-radius:0">
+      <table>
+        <thead><tr><th>Name</th><th>Present</th><th>Total</th><th>%</th></tr></thead>
+        <tbody>
+          {% for r in monthly %}
+          <tr>
+            <td>
+              <div><strong>{{ r.name }}</strong></div>
+              <div class="text-muted text-sm">{{ r.roll_no }}</div>
+            </td>
+            <td>{{ r.present }}</td>
+            <td>{{ r.total }}</td>
+            <td>
+              <span class="{% if r.pct>=75 %}text-success{% elif r.pct>=50 %}text-warning{% else %}text-danger{% endif %} font-bold">
+                {{ r.pct }}%
+              </span>
+              <div class="progress">
+                <div class="progress-bar {% if r.pct>=75 %}success{% elif r.pct>=50 %}warn{% else %}danger{% endif %}"
+                     style="width:{{ r.pct }}%"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted text-sm">No attendance data for this subject yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function markAll(status) {
+  document.querySelectorAll(`input[type=radio][value=${status}]`).forEach(r => r.checked = true);
+}
+</script>
+{% endblock %}

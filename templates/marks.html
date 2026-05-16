@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Marks — Student MS{% endblock %}
+{% block page_title %}Marks{% endblock %}
+{% block page_subtitle %}Enter and review student marks by subject{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<form method="GET" class="search-bar">
+  <select class="form-control" name="course" style="width:auto" onchange="this.form.submit()">
+    {% for c in courses %}
+    <option {% if c==selected_course %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <select class="form-control" name="year" style="width:auto" onchange="this.form.submit()">
+    {% for y in range(1,5) %}
+    <option value="{{ y }}" {% if y|string==selected_year %}selected{% endif %}>Year {{ y }}</option>
+    {% endfor %}
+  </select>
+  <select class="form-control" name="subject_id" style="width:auto" onchange="this.form.submit()">
+    {% for sub in subjects %}
+    <option value="{{ sub.id }}" {% if sub.id|string==selected_subject %}selected{% endif %}>{{ sub.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-ghost" type="submit">Load</button>
+</form>
+
+{% if rows %}
+<form method="POST">
+  <input type="hidden" name="subject_id" value="{{ selected_subject }}">
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Roll No</th><th>Name</th>
+        <th>Internal <small class="text-muted">/40</small></th>
+        <th>External <small class="text-muted">/60</small></th>
+        <th>Total <small class="text-muted">/100</small></th>
+        <th>%</th><th>Grade</th>
+      </tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <input type="hidden" name="student_id" value="{{ r.id }}">
+          <td class="text-muted text-sm">{{ r.roll_no }}</td>
+          <td><strong>{{ r.name }}</strong></td>
+          <td>
+            <input class="form-control" type="number" name="internal_{{ r.id }}"
+                   value="{{ r.internal }}" min="0" max="{{ r.max_internal }}"
+                   style="width:80px" onchange="recalc(this, {{ r.id }})">
+          </td>
+          <td>
+            <input class="form-control" type="number" name="external_{{ r.id }}"
+                   value="{{ r.external }}" min="0" max="{{ r.max_external }}"
+                   style="width:80px" onchange="recalc(this, {{ r.id }})">
+          </td>
+          <td id="total_{{ r.id }}"><strong>{{ r.total }}</strong></td>
+          <td id="pct_{{ r.id }}">
+            <span class="{% if r.pct>=75 %}text-success{% elif r.pct>=50 %}text-warning{% else %}text-danger{% endif %} font-bold">
+              {{ r.pct }}%
+            </span>
+          </td>
+          <td id="grade_{{ r.id }}">
+            <span class="badge {% if r.grade in ['O','A+'] %}badge-green{% elif r.grade in ['A','B+'] %}badge-blue{% elif r.grade in ['B','C'] %}badge-yellow{% else %}badge-red{% endif %}">
+              {{ r.grade }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:16px">
+    <button class="btn btn-success" type="submit">💾 Save All Marks</button>
+  </div>
+</form>
+{% elif selected_subject %}
+<div class="card" style="text-align:center;padding:40px">
+  <p class="text-muted">No students enrolled in this course/year yet.</p>
+  <a href="{{ url_for('add_student') }}" class="btn btn-primary" style="margin-top:14px">+ Add Students</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getGrade(pct) {
+  if (pct>=90) return 'O';
+  if (pct>=80) return 'A+';
+  if (pct>=70) return 'A';
+  if (pct>=60) return 'B+';
+  if (pct>=50) return 'B';
+  if (pct>=40) return 'C';
+  return 'F';
+}
+function gradeClass(g) {
+  if (['O','A+'].includes(g)) return 'badge-green';
+  if (['A','B+'].includes(g)) return 'badge-blue';
+  if (['B','C'].includes(g)) return 'badge-yellow';
+  return 'badge-red';
+}
+function recalc(el, sid) {
+  const row = el.closest('tr');
+  const internal = parseInt(row.querySelector(`[name=internal_${sid}]`).value)||0;
+  const external = parseInt(row.querySelector(`[name=external_${sid}]`).value)||0;
+  const total = internal + external;
+  const pct = Math.round(total / 100 * 10) / 10;
+  const grade = getGrade(pct);
+  document.getElementById(`total_${sid}`).innerHTML = `<strong>${total}</strong>`;
+  const cls = pct>=75?'text-success':pct>=50?'text-warning':'text-danger';
+  document.getElementById(`pct_${sid}`).innerHTML = `<span class="${cls} font-bold">${pct}%</span>`;
+  document.getElementById(`grade_${sid}`).innerHTML =
+    `<span class="badge ${gradeClass(grade)}">${grade}</span>`;
+}
+</script>
+{% endblock %}
