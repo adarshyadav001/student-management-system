@@ -5,8 +5,11 @@ from functools import wraps
 from datetime import datetime, date
 
 app = Flask(__name__)
-app.secret_key = 'Anshika_college_project_2024_xK9#mP2@qL'
-DB = os.path.join(os.path.dirname(__file__), 'database.db')
+app.secret_key = os.environ.get('SECRET_KEY', 'sms_super_secret_key_2024_xK9mP2qL!')
+
+# Always resolve DB path relative to this file, works on local & Render
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB = os.path.join(BASE_DIR, 'database.db')
 
 # ── DB helpers ─────────────────────────────────────────────────────────────────
 def get_db():
@@ -66,7 +69,7 @@ def init_db():
     # Seed admin
     try:
         c.execute("INSERT INTO admins(username, password) VALUES(?,?)",
-                  ('Anshika11', generate_password_hash('29112004')))
+                  ('admin', generate_password_hash('admin123')))
     except Exception:
         pass
     # Seed subjects
@@ -425,9 +428,9 @@ def api_subjects():
     rows   = conn.execute("SELECT * FROM subjects WHERE course=? AND year=?", (course, year)).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
-with app.app_context():
-    init_db()
-    
+
+# Always initialize DB on startup — works for both local and Render
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)
