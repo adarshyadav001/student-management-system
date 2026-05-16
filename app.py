@@ -425,7 +425,9 @@ def api_subjects():
     rows   = conn.execute("SELECT * FROM subjects WHERE course=? AND year=?", (course, year)).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
-
+with app.app_context():
+    init_db()
+    
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
